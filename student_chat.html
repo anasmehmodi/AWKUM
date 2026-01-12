@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Chat - AWKUM</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .chat-container {
+            max-width: 800px;
+            margin: 50px auto;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 70vh;
+        }
+
+        .chat-header {
+            background-color: var(--primary-maroon);
+            color: #fff;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header h2 {
+            color: #fff;
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 20px;
+            position: relative;
+            font-size: 0.95rem;
+        }
+
+        .message.sent {
+            align-self: flex-end;
+            background-color: var(--primary-maroon);
+            color: #fff;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message.received {
+            align-self: flex-start;
+            background-color: #e9e9e9;
+            color: #333;
+            border-bottom-left-radius: 5px;
+        }
+
+        .system-message {
+            text-align: center;
+            color: #888;
+            font-size: 0.8rem;
+            margin: 10px 0;
+        }
+
+        .chat-input-area {
+            padding: 20px;
+            background-color: #fff;
+            border-top: 1px solid #ddd;
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+        }
+
+        .chat-input-area button {
+            background-color: var(--primary-maroon);
+            color: #fff;
+            border: none;
+            padding: 0 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .chat-input-area button:hover {
+            background-color: #600000;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="main-header">
+        <div class="top-bar">
+            <div class="contact-info">
+                <i class="fas fa-phone"></i> +92-937-9230640 | <i class="fas fa-envelope"></i> registrar@awkum.edu.pk
+            </div>
+            <div class="quick-links">
+                <a href="login.html"><i class="fas fa-user-lock"></i> Portal Login</a>
+            </div>
+        </div>
+        <nav class="nav-container">
+            <div class="logo">
+                <a href="index.html">
+                    <img src="images/logo.jpg" alt="AWKUM Logo">
+                </a>
+            </div>
+            <div class="main-nav">
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="student.html">Student Portal</a></li>
+                    <li><a href="info.html">Contact</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main class="content-wrapper">
+        <div class="chat-container">
+            <div class="chat-header">
+                <h2><i class="fas fa-comments"></i> Student Community Chat</h2>
+                <span id="connection-status"
+                    style="font-size: 0.8rem; background: rgba(255,255,255,0.2); padding: 5px 10px; border-radius: 15px;">Online</span>
+            </div>
+            <div class="chat-messages" id="messages">
+                <div class="system-message">Welcome to the AWKUM Student Chat!</div>
+            </div>
+            <form id="chat-form" class="chat-input-area">
+                <input type="text" id="msg-input" placeholder="Type your message..." autocomplete="off" required>
+                <button type="submit"><i class="fas fa-paper-plane"></i></button>
+            </form>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="footer-bottom">
+            <p>&copy; 2026 Abdul Wali Khan University Mardan. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const form = document.getElementById('chat-form');
+        const input = document.getElementById('msg-input');
+        const messages = document.getElementById('messages');
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            if (input.value) {
+                // Determine if it's me sending (for visual logic, ideally backend handles IDs)
+                // For this simple demo, we emit and catch our own message too via broadcast
+                socket.emit('chat message', input.value);
+
+                // Optimistically add "Sent" message
+                // Note: Real apps usually wait for ack or ID check. 
+                // Since this simple server broadcasts back to everyone including sender:
+                // We'll let the socket listener handle adding it to avoid duplicates.
+
+                input.value = '';
+            }
+        });
+
+        socket.on('chat message', function (msg) {
+            const item = document.createElement('div');
+            item.classList.add('message');
+
+            // Simple logic: if I just typed it... well, strict "sent" styling is hard without IDs.
+            // For now, let's style all as "received" or neutral, or randomized for demo.
+            // Better: Let's assume all incoming are "received" except if we add logic.
+            // To keep it simple and robust for this stage:
+            item.classList.add('received');
+
+            item.textContent = msg;
+            messages.appendChild(item);
+            messages.scrollTop = messages.scrollHeight;
+        });
+
+        socket.on('system-message', function (msg) {
+            const item = document.createElement('div');
+            item.classList.add('system-message');
+            item.textContent = msg;
+            messages.appendChild(item);
+            messages.scrollTop = messages.scrollHeight;
+        });
+    </script>
+</body>
+
+</html>
